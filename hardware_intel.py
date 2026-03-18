@@ -1,5 +1,6 @@
 # ======================================================
-# ᑧ ARGOS v1.32 - SKILL: HARDWARE_INTEL
+# 👁️ ARGOS v1.4.0 - SKILL: HARDWARE_INTEL
+# Переименован из ardware_intel.py → hardware_intel.py
 # ======================================================
 import os
 import platform
@@ -33,7 +34,10 @@ def execute(core=None, args=""):
                 cpu_cores = os.cpu_count() or 1
                 ram = psutil.virtual_memory()
                 report += f"🖥️  [CPU]: {cpu_cores} ядер, загрузка {cpu_pct:.1f}%\n"
-                report += f"💾 [RAM]: {ram.percent:.1f}% использовано ({ram.used // 1024**2} MB / {ram.total // 1024**2} MB)\n"
+                report += (
+                    f"💾 [RAM]: {ram.percent:.1f}% использовано "
+                    f"({ram.used // 1024**2} MB / {ram.total // 1024**2} MB)\n"
+                )
             except ImportError:
                 cores = os.cpu_count() or 1
                 report += f"🖥️  [CPU]: {cores} ядер\n"
@@ -55,7 +59,10 @@ def execute(core=None, args=""):
                         ["wmic", "cpu", "get", "Name"],
                         capture_output=True, text=True, timeout=5,
                     )
-                    lines = [l.strip() for l in r.stdout.split("\n") if l.strip() and "Name" not in l]
+                    lines = [
+                        l.strip() for l in r.stdout.split("\n")
+                        if l.strip() and "Name" not in l
+                    ]
                     if lines:
                         cpu_model = lines[0]
                 elif platform.system() == "Darwin":
@@ -64,6 +71,7 @@ def execute(core=None, args=""):
                         capture_output=True, text=True, timeout=3,
                     )
                     cpu_model = r.stdout.strip()
+
                 if cpu_model and cpu_model != "unknown":
                     report += f"  Модель CPU: {cpu_model[:80]}\n"
             except Exception:
@@ -78,13 +86,14 @@ def execute(core=None, args=""):
                     usb_lines = result.stdout.strip().splitlines()
                     report += f"🔌 [USB]: {len(usb_lines)} устройств обнаружено\n"
                     for line in usb_lines[:5]:
-                        report += f"    {line}\n"
+                        report += f"  {line}\n"
                 else:
                     report += "☁️  [USB]: lsusb недоступен или нет устройств\n"
             except Exception:
                 report += "☁️  [USB]: команда lsusb недоступна\n"
 
-        report += "🛡️ [SEC]: Целостность ядра 100%."
+        report += "🛡️  [SEC]: Целостность ядра 100%."
         return report
+
     except Exception as e:
         return "❌ Сбой модуля Hardware: " + str(e)
