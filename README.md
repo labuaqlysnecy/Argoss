@@ -922,6 +922,40 @@ docker-compose --profile apk run apk_builder
 
 ---
 
+## 📦 Публикация пакета на PyPI (Trusted Publisher / OIDC)
+
+Пакет называется **`argos-universalsigtrip`** и публикуется без токенов через
+[OIDC Trusted Publishing](https://docs.pypi.org/trusted-publishers/).
+
+### Установка пакета
+```bash
+pip install argos-universalsigtrip
+```
+
+### Разовая настройка Trusted Publisher (делается один раз)
+
+#### TestPyPI
+1. Зайти на [test.pypi.org](https://test.pypi.org) → Аккаунт → Publishing
+2. **Add a new pending publisher**:
+   - PyPI project name: `argos-universalsigtrip`
+   - Owner: `labuaqlysnecy`
+   - Repository: `Argoss`
+   - Workflow file name: `publish_testpypi.yml`
+   - Environment name: *(оставить пустым)*
+3. Запустить workflow вручную: **Actions → 📦 Publish to TestPyPI → Run workflow**
+
+#### PyPI (production)
+1. Зайти на [pypi.org](https://pypi.org) → Аккаунт → Publishing
+2. **Add a new pending publisher** с теми же параметрами, но:
+   - Workflow file name: `publish_pypi.yml`
+3. Создать GitHub Release (тег `v*.*.*`) или запустить вручную:
+   **Actions → 🚀 Publish to PyPI → Run workflow**
+
+> **Важно:** Для публикации не нужны никакие секреты (`PYPI_TOKEN`). Аутентификация
+> осуществляется автоматически через GitHub OIDC.
+
+---
+
 ## 📊 Аудит v1.4.0
 
 ```
