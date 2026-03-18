@@ -179,6 +179,7 @@ jobs:
 
       - name: Download model artifact
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: argos-model
           path: data/argos_model/
