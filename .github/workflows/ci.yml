@@ -62,9 +62,18 @@ jobs:
           path: src/
           retention-days: 7
 
+      - name: Очистка dist/ перед сборкой пакета
+        run: rm -rf dist/
+
       - name: Проверка сборки пакета (packaging sanity check)
         run: |
           pip install build
+          PROJ_DIR=$(pwd)
+          cd /tmp && python -m build "$PROJ_DIR" --outdir "$PROJ_DIR/dist"
+          echo "✅ Пакет argos-universalsigtrip собран успешно"
+          ls -lh "$PROJ_DIR/dist/"
+          find "$PROJ_DIR/dist" \( -name '*.whl' -o -name '*.tar.gz' \) | grep -q . || (echo "❌ dist/ не содержит .whl или .tar.gz" && exit 1)
+
           python -m build
           echo "== pwd =="; pwd
           echo "== ls -la =="; ls -la
@@ -78,3 +87,4 @@ jobs:
             echo "❌ No .whl or .tar.gz artifacts found in dist/"
             exit 1
           fi
+
