@@ -73,3 +73,18 @@ jobs:
           echo "✅ Пакет argos-universalsigtrip собран успешно"
           ls -lh "$PROJ_DIR/dist/"
           find "$PROJ_DIR/dist" \( -name '*.whl' -o -name '*.tar.gz' \) | grep -q . || (echo "❌ dist/ не содержит .whl или .tar.gz" && exit 1)
+
+          python -m build
+          echo "== pwd =="; pwd
+          echo "== ls -la =="; ls -la
+          if [ ! -d dist ]; then
+            echo "❌ dist/ was not created after build"
+            exit 1
+          fi
+          echo "✅ Пакет argos-universalsigtrip собран успешно"
+          ls -lh dist/
+          if ! ls dist/*.whl dist/*.tar.gz >/dev/null 2>&1; then
+            echo "❌ No .whl or .tar.gz artifacts found in dist/"
+            exit 1
+          fi
+
