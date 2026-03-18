@@ -41,7 +41,8 @@ smbus2>=0.4.3
 
 # ── Безопасность
 cryptography>=42.0.0
-pygost>=5.4.0
+# pygost is not on standard PyPI; install from https://pypi.cypherpunks.su/ if needed:
+#   pip install --index-url https://pypi.cypherpunks.su/ pygost
 
 # ── Парсинг / конфиг
 beautifulsoup4>=4.12.0
