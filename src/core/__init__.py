@@ -9,7 +9,13 @@ _LEGACY_CORE_PATH = Path(__file__).resolve().parents[1] / "core.py"
 
 def _load_argos_core_class():
     if _LEGACY_CORE_MODULE in sys.modules:
-        return sys.modules[_LEGACY_CORE_MODULE].ArgosCore
+        cached = sys.modules[_LEGACY_CORE_MODULE]
+        if hasattr(cached, "ArgosCore"):
+            return cached.ArgosCore
+        # Module was registered but failed to define ArgosCore (e.g. due to a
+        # missing dependency during a previous import attempt).  Remove the
+        # broken entry so that we re-execute the module below.
+        del sys.modules[_LEGACY_CORE_MODULE]
 
     _spec = spec_from_file_location(_LEGACY_CORE_MODULE, _LEGACY_CORE_PATH)
     if _spec is None or _spec.loader is None:
