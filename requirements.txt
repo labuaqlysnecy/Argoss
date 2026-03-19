@@ -78,7 +78,7 @@ pyrtlsdr>=0.3.0                 # SDR-приёмник (src/connectivity/air_sni
 # ── Промышленные протоколы (industrial_protocols.py)
 xknx>=3.1.0                     # KNX умный дом
 opcua>=0.98.13                  # OPC UA
-python-mbus>=0.9                 # M-Bus теплосчётчики
+python-mbus>=0.0.1.dev1                 # M-Bus теплосчётчики
 
 # ── Квантовые вычисления (src/quantum/ibm_bridge.py, src/quantum/oracle.py)
 qiskit>=1.1.0
