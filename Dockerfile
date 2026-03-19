@@ -1,63 +1,64 @@
-# ── Build stage ──────────────────────────────────────────────────────────────
-# Pinned digest for python:3.11-slim — update periodically for security patches
-FROM python:3.11-slim@sha256:6d98ca198cea726f2c86da2699594339a7b7ff08e49728797b4ed6e3b5c3b62a AS builder
+# ─── Stage 1: Builder ─────────────────────────────────────────────────────
+FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
-# System deps needed to compile some Python packages (PyAudio, cryptography, etc.)
+# Системные зависимости для компиляции
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        libffi-dev \
-        libssl-dev \
-        portaudio19-dev \
-        git \
+    gcc g++ libffi-dev libssl-dev portaudio19-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Установить зависимости в отдельный слой (кешируется)
 COPY requirements.txt .
-# Install into a prefix so we can copy only the venv in the final stage
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir --prefix=/install -r requirements.txt
 
+# ─── Stage 2: Runtime ─────────────────────────────────────────────────────
+FROM python:3.12-slim AS runtime
 
-# ── Runtime stage ─────────────────────────────────────────────────────────────
-# Pinned digest for python:3.11-slim — update periodically for security patches
-FROM python:3.11-slim@sha256:6d98ca198cea726f2c86da2699594339a7b7ff08e49728797b4ed6e3b5c3b62a AS runtime
+LABEL org.opencontainers.image.title="ARGOS Universal OS"
+LABEL org.opencontainers.image.description="Автономная кроссплатформенная ИИ-система"
+LABEL org.opencontainers.image.version="2.0.0"
+LABEL org.opencontainers.image.source="https://github.com/labuaqlysnecy/Argoss"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
 
-LABEL org.opencontainers.image.title="Argos Universal OS" \
-      org.opencontainers.image.description="Autonomous AI platform — headless/server mode" \
-      org.opencontainers.image.source="https://github.com/labuaqlysnecy/Argoss" \
-      org.opencontainers.image.version="1.4.0"
-
-# Runtime system packages (audio libs keep TTS/STT from crashing silently)
+# Минимальные runtime-зависимости
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libportaudio2 \
-        espeak \
-        ffmpeg \
-        sqlite3 \
-        curl \
-    && rm -rf /var/lib/apt/lists/*
+    libssl3 libffi8 curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -u 1000 -s /bin/bash argos
 
-# Copy installed Python packages from builder
+# Скопировать установленные пакеты из builder
 COPY --from=builder /install /usr/local
 
 WORKDIR /app
 
-# Create a non-root user for security
-RUN useradd -m -u 1000 argos && \
-    mkdir -p /app/logs /app/config /app/data /app/builds && \
-    chown -R argos:argos /app
+# Скопировать исходники (порядок важен для кеша)
+COPY --chown=argos:argos requirements.txt pyproject.toml ./
+COPY --chown=argos:argos src/ ./src/
+COPY --chown=argos:argos modules/ ./modules/
+COPY --chown=argos:argos config/ ./config/
+COPY --chown=argos:argos main.py genesis.py health_check.py ./
+COPY --chown=argos:argos scripts/ ./scripts/
 
-# Copy project source
-COPY --chown=argos:argos . .
+# Создать необходимые директории
+RUN mkdir -p logs data && chown -R argos:argos /app
 
 USER argos
 
-# Expose web dashboard port
+# Инициализировать структуру при первом запуске
+RUN python genesis.py 2>/dev/null || true
+
+# Порты
 EXPOSE 8080
 
-# Health-check: ping the web dashboard if available, else verify core import
-HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)" \
-     || python -c "import src.argos_logger; print('ok')" || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/api/health || exit 1
 
-# Default: headless server mode (no GUI required)
-CMD ["python", "main.py", "--no-gui"]
+# Точка входа — headless режим с Dashboard
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+ENTRYPOINT ["python", "main.py"]
+CMD ["--no-gui", "--dashboard"]
